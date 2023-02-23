@@ -1,11 +1,25 @@
-<!DOCTYPE html>
+
 <html>
   <head>
     <title>Türkiye Last Earthquakes and Effects</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.css" />
+<!-- Leaflet library -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+<!-- Leaflet.draw plugin -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+<!-- Leaflet.draw-toolbar plugin -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw-toolbar/dist/leaflet.draw-toolbar.css" />
+<script src="https://unpkg.com/leaflet-draw-toolbar/dist/leaflet.draw-toolbar.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/esri-leaflet@2.0.0/dist/esri-leaflet.js"></script>
-    <style>
+   <style>
       body, html {
         height: 100%;
         margin: 0;
@@ -16,6 +30,24 @@
       }
       .popup-text {
         font-size: 18px;
+      }
+      
+      /* Increase the size of the basemap control */
+      .leaflet-control-layers.leaflet-control {
+        width: 200px;
+        height: 63px;
+        font-size: 16px;
+        
+      }
+
+      /* Adjust the height of each basemap layer */
+      .leaflet-control-layers-overlays label {
+        display: block;
+        height: 00px;
+        margin: 10;
+        padding: 10;
+        line-height: 1.2;
+        text-align: center;
       }
     </style>
   </head>
@@ -28,7 +60,8 @@
   maxZoom: 19,
   attribution: 'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
   name: 'OpenStreetMap'
-});
+}); 
+      
 
 var basemapLayer2 = L.tileLayer('https://{s}.tile.thunderforest.com/cycle/{z}/{x}/{y}.png', {
   maxZoom: 22,
@@ -47,37 +80,47 @@ var baseMaps = {
   "OpenStreetMap": basemapLayer1,
   "OpenTopoMap": basemapLayer3
 };
-
+      
+      
 // Add the basemap widget using L.control.layers
-L.control.layers(baseMaps).addTo(map);
+L.control.layers(baseMaps, null, { collapsed: false, position: 'topright' }).addTo(map);
+basemapLayer1.addTo(map);
 
       var seismicData = L.esri.featureLayer({
-        url: 'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/USGS_Seismic_Data_v1/FeatureServer/0',
-        where: "mag > 6 AND place LIKE '%Turkey%'",
-        onEachFeature: function(feature, layer) {
-          layer.bindPopup("<div class='popup-text'><strong>Location:</strong> " + feature.properties.place + "<br>" + "<strong>Magnitude:</strong> " + feature.properties.mag + "<br>" + "<strong>Date:</strong> " + new Date(feature.properties.eventTime) + "<br>" + "<strong>Depth:</strong> " + feature.properties.depth  + " km</div>");
-          layer.on('click', function(e) {
-            if (buffer) {
-              map.removeLayer(buffer);
-            }
-            var selectedMarker = e.target;
-            var latlng = selectedMarker.getLatLng();
-            buffer = L.circle(latlng, {
-              radius: 100000,
-              color: 'red',
-              fillOpacity: 0.2
-            }).addTo(map);
-          });
-        },
-        style: function(feature) {
-          return {
-            fillColor: 'red',
-            color: 'black',
-            weight: 1,
-            fillOpacity: 1
-          };
-        }
+  url: 'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/USGS_Seismic_Data_v1/FeatureServer/0',
+  where: "mag > 6 AND place LIKE '%Turkey%'",
+  onEachFeature: function(feature, layer) {
+    layer.bindPopup("<div class='popup-text'><strong>Location:</strong> " + feature.properties.place + "<br>" + "<strong>Magnitude:</strong> " + feature.properties.mag + "<br>" + "<strong>Date:</strong> " + new Date(feature.properties.eventTime) + "<br>" + "<strong>Depth:</strong> " + feature.properties.depth  + " km</div>");
+    layer.on('click', function(e) {
+      if (buffer) {
+        map.removeLayer(buffer);
+      }
+      var selectedMarker = e.target;
+      var latlng = selectedMarker.getLatLng();
+      buffer = L.circle(latlng, {
+        radius: 100000,
+        color: 'red',
+        fillOpacity: 0.2
       }).addTo(map);
+          map.fitBounds(buffer.getBounds());
+
+     var bufferText = feature.properties.place + "</b>, <b>" + feature.properties.mag + "</b> Şiddetindeki Depremin <b>100</b> KM Buffer Alanı <b>"  ;
+
+      L.popup()
+        .setLatLng(latlng)
+        .setContent(bufferText)
+        .openOn(map);
+    });
+  },
+  style: function(feature) {
+    return {
+      fillColor: 'red',
+      color: 'black',
+      weight: 1,
+      fillOpacity: 1
+    };
+  }
+}).addTo(map);
 
       var buffer;
       map.on('click', function(e) {
@@ -85,6 +128,7 @@ L.control.layers(baseMaps).addTo(map);
           map.removeLayer(buffer);
         }
       });
+      
       L.control.fullscreen().addTo(map);
     </script>
   </body>
